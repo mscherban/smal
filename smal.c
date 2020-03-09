@@ -142,7 +142,7 @@ void initialize() {
 /* get the highest priority process that is ready to run,
  * enable interrupts, then hard context switch to it.
  * the current context is abandoned. */
-void start_small() {
+void start_smal() {
     pid_t p;
     l_pop(readylist, rl_head, &p);
     pcb[p].state = RUNNING;
@@ -194,6 +194,6 @@ __interrupt void rtc_irq(void) {
 
 void hwinit() {
     RTCCTL = RTCSR_L;
-    RTCMOD = 1000;///HZ;
+    RTCMOD = 1000;///HZ; //TODO: set this back. using a second to slow things down.
     RTCCTL |= /*RTCSS__VLOCLK | RTCSR_L | RTCIE |*/ RTCPS__10;
 }

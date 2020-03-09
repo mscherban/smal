@@ -58,5 +58,5 @@ bool l_pop(le_t list[], uint8_t head, uint8_t *ret);
 void l_appendv(le_t list[], uint8_t head, uint8_t n, int8_t v);
 void l_append(le_t list[], uint8_t head, uint8_t n);
 void initialize();
-void start_small();
+void start_smal();
 #endif /* SMAL_H_ */

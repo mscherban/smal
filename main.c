@@ -39,7 +39,7 @@ void main(void) {
     ready(create(led_on, 10));
     ready(create(led_off, 10));
 
-    start_small();
+    start_smal();
 
     /* will never reach here */
     for(;;) {
