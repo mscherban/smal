@@ -15,7 +15,7 @@
 
 #define HZ      1000
 #define QUANTUM 2
-#define DEFAULT_STACK_SIZE  20 /* in 16 bit words */
+#define DEFAULT_STACK_SIZE  25 /* in 16 bit words */
 #define NPROC   10
 #define LIST_HDR_TLR_SIZE   2
 #define STACK_MARKER    0xCEA1

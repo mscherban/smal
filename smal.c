@@ -122,7 +122,7 @@ void initialize() {
     /* create the null process but only allocate, dont initialize the stack */
     //create(null, 0);
     p = &pcb[0];
-    stptr = (uint16_t*)malloc(sizeof(uint16_t)*DEFAULT_STACK_SIZE);
+    stptr = (uint16_t*)malloc(sizeof(uint16_t)*4);
     p->stack_base = stptr;
     stptr += DEFAULT_STACK_SIZE-1; /* go to the end of the stack */
     *stptr-- = STACK_MARKER;
