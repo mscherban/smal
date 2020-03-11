@@ -4,7 +4,7 @@
  */
 #include <smal.h>
 
-le_t readylist[NPROC + LIST_HDR_TLR_SIZE];
+le_t queue[NPROC + LIST_HDR_TLR_SIZE];
 pcb_t pcb[NPROC];
 
 const uint8_t rl_head = NPROC;
@@ -30,7 +30,7 @@ static pid_t next_pid() {
 void ready(uint8_t pid) {
     pcb_t *p = &pcb[pid];
     p->state = READY;
-    l_appendv(readylist, rl_head, pid, p->priority);
+    l_appendv(queue, rl_head, pid, p->priority);
 }
 
 pid_t create(void *func_ptr, int8_t priority) {
@@ -110,12 +110,12 @@ void initialize() {
     }
 
     /* initialize the readylist */
-    readylist[rl_head].next = rl_tail;
-    readylist[rl_head].prev = rl_tail;
-    readylist[rl_head].val = 0x7f;
-    readylist[rl_tail].next = rl_head;
-    readylist[rl_tail].prev = rl_head;
-    readylist[rl_tail].val = 0x80;
+    queue[rl_head].next = rl_tail;
+    queue[rl_head].prev = rl_tail;
+    queue[rl_head].val = 0x7f;
+    queue[rl_tail].next = rl_head;
+    queue[rl_tail].prev = rl_head;
+    queue[rl_tail].val = 0x80;
 
     preempt = 0;
 
@@ -144,7 +144,7 @@ void initialize() {
  * the current context is abandoned. */
 void start_smal() {
     pid_t p;
-    l_pop(readylist, rl_head, &p);
+    l_pop(queue, rl_head, &p);
     pcb[p].state = RUNNING;
     currpid = p;
     preempt = QUANTUM;
@@ -160,7 +160,7 @@ void resched() {
     if (pold->state == RUNNING) {
         /* process was preempted, but still running */
         /* check if its still the highest priority */
-        if (pold->priority > l_peek(readylist, rl_head)) {
+        if (pold->priority > l_peek(queue, rl_head)) {
             /* it is, keep it running */
             preempt = QUANTUM;
             return;
@@ -171,7 +171,7 @@ void resched() {
     }
 
     /* get the new process */
-    l_pop(readylist, rl_head, &currpid);
+    l_pop(queue, rl_head, &currpid);
     pnew = &pcb[currpid];
     pnew->state = RUNNING;
     preempt = QUANTUM;
