@@ -4,11 +4,13 @@
  */
 #include <smal.h>
 
-le_t queue[NPROC + LIST_HDR_TLR_SIZE];
+le_t queue[NPROC + LIST_HDR_TLR_SIZE + LIST_HDR_TLR_SIZE];
 pcb_t pcb[NPROC];
 
 const uint8_t rl_head = NPROC;
 const uint8_t rl_tail = NPROC+1;
+const uint8_t sq_head = NPROC+2;
+const uint8_t sq_tail = NPROC+3;
 
 pid_t currpid;
 uint16_t    preempt;
@@ -60,6 +62,34 @@ int8_t l_peek(le_t list[], uint8_t head) {
     return list[list[head].next].val;
 }
 
+/* delta list append, sort by the key, d, but positions are differences
+ * to the neighbors
+ * - would have been easier to just track uint8_t next, prev */
+void l_appendd(le_t list[], uint8_t head, uint8_t n, uint8_t d) {
+    le_t *ent, *prev;
+    ent = &list[head];
+
+    /* find where to place me */
+    while (d > ent->val) {
+        d -= ent->val;
+        prev = ent;
+        ent = &list[ent->next];
+    }
+
+    /* add entry to the list */
+    list[n].val = d;
+    list[n].next = prev->next;
+    prev->next = n;
+
+    /* go through the rest of the links updating deltas */
+    ent = &list[list[n].next];
+    while (ent->val != 0x7f) {
+        ent->val -= d;
+        ent = &list[ent->next];
+    }
+}
+
+/* list append, sorted by key */
 void l_appendv(le_t list[], uint8_t head, uint8_t n, int8_t v) {
     le_t *ent;
     ent = &list[head];
@@ -116,6 +146,14 @@ void initialize() {
     queue[rl_tail].next = rl_head;
     queue[rl_tail].prev = rl_head;
     queue[rl_tail].val = 0x80;
+
+    /* initialize the sleep queue */
+    queue[sq_head].next = sq_tail;
+    queue[sq_head].prev = sq_tail;
+    queue[sq_head].val = 0;
+    queue[sq_tail].next = sq_head;
+    queue[sq_tail].prev = sq_head;
+    queue[sq_tail].val = 0x7f;
 
     preempt = 0;
 
