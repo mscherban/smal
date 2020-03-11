@@ -22,12 +22,14 @@
 
 #define enable_interrupts()   __bis_SR_register(GIE)
 #define disable_interrupts()  __bic_SR_register(GIE)
+#define q_empty(q, head)      ((q)[head].next == (head+1))
 
 typedef enum {
     NOT_USED = 0,
     RUNNING,
     READY,
     SUSPENDED,
+    SLEEPING,
 } state_t;
 
 typedef struct ProcessControlBlock {
@@ -38,8 +40,8 @@ typedef struct ProcessControlBlock {
 } pcb_t;
 
 typedef struct ListEntry {
-    uint8_t prev, next;
-    int8_t val;
+    uint8_t next;
+    int16_t val;
 } le_t;
 
 typedef uint8_t pid_t;
@@ -52,12 +54,14 @@ extern le_t readylist[];
 extern pcb_t pcb[];
 extern pid_t currpid;
 
+void sleep(uint16_t ms);
 void ready(uint8_t pid);
 pid_t create(void *func_ptr, int8_t priority);
 bool l_pop(le_t list[], uint8_t head, uint8_t *ret);
-void l_appendd(le_t list[], uint8_t head, uint8_t n, uint8_t d);
+void l_appendd(le_t list[], uint8_t head, uint8_t n, uint16_t d);
 void l_appendv(le_t list[], uint8_t head, uint8_t n, int8_t v);
 void l_append(le_t list[], uint8_t head, uint8_t n);
 void initialize();
 void start_smal();
+void resched();
 #endif /* SMAL_H_ */

@@ -58,13 +58,13 @@ pid_t create(void *func_ptr, int8_t priority) {
     return new_pid;
 }
 
-int8_t l_peek(le_t list[], uint8_t head) {
+inline int16_t l_peek(le_t list[], uint8_t head) {
     return list[list[head].next].val;
 }
 
 /* delta list append, sort by the key, d, but positions are differences
  * to the neighbors */
-void l_appendd(le_t list[], uint8_t head, uint8_t n, uint8_t d) {
+void l_appendd(le_t list[], uint8_t head, uint8_t n, uint16_t d) {
     uint8_t next, prev;
 
     /* find placement in list */
@@ -139,26 +139,22 @@ void initialize() {
 
     /* initialize the readylist */
     queue[rl_head].next = rl_tail;
-    queue[rl_head].prev = rl_tail;
-    queue[rl_head].val = 0x7f;
+    queue[rl_head].val = 0x7fff;
     queue[rl_tail].next = rl_head;
-    queue[rl_tail].prev = rl_head;
-    queue[rl_tail].val = 0x80;
+    queue[rl_tail].val = 0x8000;
 
     /* initialize the sleep queue */
     queue[sq_head].next = sq_tail;
-    queue[sq_head].prev = sq_tail;
-    queue[sq_head].val = 0;
+    queue[sq_head].val = 0x0000;
     queue[sq_tail].next = sq_head;
-    queue[sq_tail].prev = sq_head;
-    queue[sq_tail].val = 0x7f;
+    queue[sq_tail].val = 0x7fff;
 
     preempt = 0;
 
     /* create the null process but only allocate, dont initialize the stack */
     //create(null, 0);
     p = &pcb[0];
-    stptr = (uint16_t*)malloc(sizeof(uint16_t)*4);
+    stptr = (uint16_t*)malloc(sizeof(uint16_t)*DEFAULT_STACK_SIZE);
     p->stack_base = stptr;
     stptr += DEFAULT_STACK_SIZE-1; /* go to the end of the stack */
     *stptr-- = STACK_MARKER;
@@ -215,6 +211,16 @@ void resched() {
     return;
 }
 
+void sleep(uint16_t ms) {
+
+    /* put the process on the sleep queue */
+    disable_interrupts();
+    l_appendd(queue, sq_head, currpid, ms);
+    pcb[currpid].state = SLEEPING;
+    resched();
+    enable_interrupts();
+}
+
 void null() {
     while(1)
         ;
@@ -222,7 +228,17 @@ void null() {
 
 #pragma vector=RTC_VECTOR
 __interrupt void rtc_irq(void) {
+    uint8_t pid;
     unsigned int src = RTCIV; //clear the interrupt
+
+    /* decrement sleep q */
+    if (!q_empty(queue, sq_head)) {
+        if (--queue[queue[sq_head].next].val <= 0) {
+            l_pop(queue, sq_head, &pid);
+            ready(pid);
+        }
+    }
+
     if (--preempt <= 0) {
         resched();
     }
@@ -230,6 +246,6 @@ __interrupt void rtc_irq(void) {
 
 void hwinit() {
     RTCCTL = RTCSR_L;
-    RTCMOD = 1000;///HZ; //TODO: set this back. using a second to slow things down.
+    RTCMOD = (1000/HZ) - 1;
     RTCCTL |= /*RTCSS__VLOCLK | RTCSR_L | RTCIE |*/ RTCPS__10;
 }
