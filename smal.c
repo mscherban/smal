@@ -63,29 +63,27 @@ int8_t l_peek(le_t list[], uint8_t head) {
 }
 
 /* delta list append, sort by the key, d, but positions are differences
- * to the neighbors
- * - would have been easier to just track uint8_t next, prev */
+ * to the neighbors */
 void l_appendd(le_t list[], uint8_t head, uint8_t n, uint8_t d) {
-    le_t *ent, *prev;
-    ent = &list[head];
+    uint8_t next, prev;
 
-    /* find where to place me */
-    while (d > ent->val) {
-        d -= ent->val;
-        prev = ent;
-        ent = &list[ent->next];
+    /* find placement in list */
+    prev = head;
+    next = list[head].next;
+    while (next != head+1 && d >= list[next].val) {
+        d -= list[next].val;
+        prev = next;
+        next = list[next].next;
     }
 
-    /* add entry to the list */
+    /* link in new entry */
+    list[n].next = next;
     list[n].val = d;
-    list[n].next = prev->next;
-    prev->next = n;
+    list[prev].next = n;
 
-    /* go through the rest of the links updating deltas */
-    ent = &list[list[n].next];
-    while (ent->val != 0x7f) {
-        ent->val -= d;
-        ent = &list[ent->next];
+    /* update next entry, if not the tail */
+    if (next != head+1) {
+        list[next].val -= d;
     }
 }
 
