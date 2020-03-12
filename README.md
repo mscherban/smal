@@ -15,7 +15,9 @@ just add the project files to your directory and ```#include <smal.h>```
 
 ## progress
 currently swaps between processes using a priority based preemption scheduler
+leverages a sleep queue
 
 ## to-do
-* sleep queue
+* ~~sleep queue~~
 * synchronization, due to interrupt based preemption
+* task-to-task notifications
